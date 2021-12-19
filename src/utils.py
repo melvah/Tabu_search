@@ -30,8 +30,8 @@ class TabuSearch:
     def fun(self, solution):
         assert len(solution) == len(
             self.goal
-        ), """The length of goal must be equal to length\n
-        Please initialize the Tabu Search object with another vector"""
+        ), f"""The length of goal must be equal to "length". The length of the goal is {len(self.goal)} but the length is {len(solution)}
+        Please initialize the Tabu Search object with another vector with length {len(solution)}."""
 
         cost = abs(np.subtract(self.goal, solution).sum())
         return cost
@@ -40,33 +40,57 @@ class TabuSearch:
         self, length: int, fun, list_size: int, num_iter: int, time_out: int
     ):
         ini_solution = self.initialSolution(length)
+        current_solution = ini_solution
         best_solution = ini_solution
         cost_ini = fun(ini_solution)
         best_cost = cost_ini
-        tabulist = []
-        tabulist.append(ini_solution)
+        tabulistKey = []
+        tabulistKey.append(0)
+        tabudict = {}
+        tabudict[0] = ini_solution
         max_iter = True
         time_flag = True
         start = time.time()
         iter = 0
         while max_iter or time_flag:
-            while len(tabulist) <= list_size:
+            if iter == num_iter:
+                print("maximum number of iterations reached")
+                max_iter = False
+                return best_solution
 
-                new_solution = self.generatingSolution(ini_solution)
+            while len(tabulistKey) <= list_size:
+
+                new_solution = self.generatingSolution(current_solution)
+
+                # for value in tabudict.values():
+
                 iter += 1
-                if np.all(new_solution) not in tabulist:
-                    tabulist.append(new_solution)
-                    new_cost = fun(new_solution)
+
+                if not (abs(np.subtract(tabudict[iter - 1], new_solution))).all():
+
+                    tabudict[iter] = new_solution
+                    current_solution = new_solution
+
+                    tabulistKey.append(iter)
+
+                    new_cost = fun(current_solution)
                     if new_cost < best_cost:
+
                         best_cost = new_cost
-                        best_solution = new_solution
+                        best_solution = current_solution
                         if iter == num_iter:
+
                             max_iter = False
                             return best_solution
+                else:
+                    break
 
-            del tabulist[0]
+            del tabulistKey[0]
             end = time.time()
             time_exec = int(end - start)
+
             if time_exec >= time_out:
+                print("TimeOut")
                 time_flag = False
+                break
         return best_solution
